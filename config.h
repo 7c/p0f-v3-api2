@@ -12,7 +12,7 @@
 #define _HAVE_CONFIG_H
 
 #include "types.h"
-
+#define API_VERSION 0x02
 /********************************************
  * Things you may reasonably want to change *
  ********************************************/

@@ -84,6 +84,10 @@ void fingerprint_mtu(u8 to_srv, struct packet_data* pk, struct packet_flow* f) {
 
     if (to_srv) f->client->link_type = sigs[bucket][i].name;
     else f->server->link_type = sigs[bucket][i].name;
+    
+    // api-version-2
+    if (to_srv) f->client->raw_mtu = mtu;
+    else f->server->raw_mtu = mtu;
 
   }
 

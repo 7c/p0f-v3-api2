@@ -1324,12 +1324,13 @@ void check_ts_tcp(u8 to_srv, struct packet_data* pk, struct packet_flow* f) {
 
     f->client->last_up_min = up_min;
     f->client->up_mod_days = up_mod_days;
+    f->client->ffreq = ffreq;
 
   } else {
 
     f->server->last_up_min = up_min;
     f->server->up_mod_days = up_mod_days;
-
+    f->server->ffreq = ffreq;
   }
 
   OBSERVF("uptime", "%u days %u hrs %u min (modulo %u days)",

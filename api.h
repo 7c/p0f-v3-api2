@@ -39,10 +39,17 @@ struct p0f_api_query {
 } __attribute__((packed));
 
 struct p0f_api_response {
-
   u32 magic;                            /* Must be P0F_RESP_MAGIC             */
   u32 status;                           /* P0F_STATUS_*                       */
 
+  // api-version-2 - patched
+  u8 version;                           /* 0x02 : version of the api_response */
+  u16 last_mtu;                          /* Raw MTU value */
+  double last_freq;                       /* Raw MTU value */
+  
+  
+  
+  // version1 - original version
   u32 first_seen;                       /* First seen (unix time)             */
   u32 last_seen;                        /* Last seen (unix time)              */
   u32 total_conn;                       /* Total connections seen             */

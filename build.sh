@@ -9,7 +9,7 @@
 #
 
 PROGNAME="p0f"
-VERSION="3.09b"
+VERSION="3.09b-api2"
 
 test "$CC" = "" && CC="gcc"
 
