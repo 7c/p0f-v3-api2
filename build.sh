@@ -31,7 +31,7 @@ else
   USE_LIBS="-lpcap $LIBS"
 fi
 
-OBJFILES="api.c process.c fp_tcp.c fp_mtu.c fp_http.c readfp.c"
+OBJFILES="api.c process.c fp_tcp.c fp_mtu.c fp_http.c readfp.c mutex_tcp.c"
 
 echo "Welcome to the build script for $PROGNAME $VERSION!"
 echo "Copyright (C) 2012 by Michal Zalewski <lcamtuf@coredump.cx>"

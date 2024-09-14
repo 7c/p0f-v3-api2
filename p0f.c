@@ -35,6 +35,7 @@
 #include <netinet/in.h>
 
 #include <pcap.h>
+#include "mutex_tcp.h"
 
 #ifdef NET_BPF
 #  include <net/bpf.h>
@@ -129,6 +130,7 @@ static void usage(void) {
 "\n"
 "Operating mode and output settings:\n"
 "\n"
+"  -b port   - specify the port of the tcp-mutex, it will lock the port at 127.0.0.1:port\n"
 "  -f file   - read fingerprint database from 'file' (%s)\n"
 "  -o file   - write information to the specified log file\n"
 #ifndef __CYGWIN__
@@ -1021,18 +1023,32 @@ int main(int argc, char** argv) {
   s32 r;
 
   setlinebuf(stdout);
+  int mutex_port = 2222;
 
   SAYF("--- p0f " VERSION " by Michal Zalewski <lcamtuf@coredump.cx> ---\n\n");
 
   if (getuid() != geteuid())
     FATAL("Please don't make me setuid. See README for more.\n");
 
-  while ((r = getopt(argc, argv, "+LS:df:i:m:o:pr:s:t:u:")) != -1) switch (r) {
+  while ((r = getopt(argc, argv, "+LS:df:i:m:o:pr:s:t:u:b:")) != -1) switch (r) {
 
     case 'L':
 
       list_interfaces();
       exit(0);
+
+    case 'b':     
+      mutex_port = atoi(optarg);
+      if (mutex_port>65535 || mutex_port<1)
+        FATAL("Invalid port number provided for tcp-mutex.");
+
+      if (mutex_start(mutex_port) == 0) {
+            printf("Successfully acquired the lock on port %d.", mutex_port);
+        } else {
+            printf("Failed to acquire lock. Another instance might be running.\n");
+            return -1;
+        }
+      break;
 
     case 'S':
 
@@ -1159,7 +1175,7 @@ int main(int argc, char** argv) {
     default: usage();
 
   }
-
+ 
   if (optind < argc) {
 
     if (optind + 1 == argc) orig_rule = (u8*)argv[optind];
