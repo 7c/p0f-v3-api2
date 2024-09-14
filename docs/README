@@ -6,6 +6,13 @@ this commit adds new fields to api response:
 
 this patch will break existing api clients unless they check if the version field is set to 2, if not they will just ignore the new fields. [NodeJS p0f v3 API Client](https://github.com/7c/p0f-client) is updated to support the new fields. It supports both v1 and v2, v2 is the new version with added fields. Thanks to [Michal Zalewski](http://lcamtuf.coredump.cx/p0f3/) for the p0f project.
 
+## How to build
+```
+apt install -y libpcap-dev make build-essential
+git clone https://github.com/7c/p0f-v3-api2 /opt/p0f-v3-api2
+cd /opt/p0f-v3-api2 && make
+```
+
 ## original README
                         =============================
                         p0f v3: passive fingerprinter
