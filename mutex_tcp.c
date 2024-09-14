@@ -4,31 +4,87 @@
 #include <string.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+#include <fcntl.h>
 #include <sys/socket.h>
-#include <signal.h>
+#include <sys/select.h>
+#include <errno.h>
 
 // Global variable to store the socket file descriptor
 static int sockfd = -1;
 
-void handle_client(int client_fd) {
-    // Here you can handle client connections
-    // For simplicity, just close the connection
-    close(client_fd);
+// Function to set the socket to non-blocking mode
+void set_non_blocking(int fd) {
+    int flags = fcntl(fd, F_GETFL, 0);
+    if (flags == -1) {
+        perror("fcntl(F_GETFL)");
+        exit(EXIT_FAILURE);
+    }
+
+    if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) == -1) {
+        perror("fcntl(F_SETFL)");
+        exit(EXIT_FAILURE);
+    }
 }
 
+// Child process function to run the server with non-blocking accept()
 void run_server() {
     struct sockaddr_in client_addr;
     socklen_t client_len = sizeof(client_addr);
     int client_fd;
+    fd_set read_fds;
+    struct timeval timeout;
+
+    // Set the listening socket to non-blocking mode
+    set_non_blocking(sockfd);
 
     while (1) {
-        client_fd = accept(sockfd, (struct sockaddr*)&client_addr, &client_len);
-        if (client_fd < 0) {
-            perror("accept");
-            break;
+        // Check if the parent process has died
+        if (getppid() == 1) {
+            printf("Parent process has terminated. Shutting down server...\n");
+            break;  // Exit the server loop if the parent process is gone
         }
-        handle_client(client_fd);  // Handle each client connection
+
+        // Initialize the file descriptor set
+        FD_ZERO(&read_fds);
+        FD_SET(sockfd, &read_fds);
+        
+        // Set timeout (optional), e.g., 5 seconds
+        timeout.tv_sec = 5;
+        timeout.tv_usec = 0;
+
+        // Use select to wait for incoming connections (with a timeout)
+        int activity = select(sockfd + 1, &read_fds, NULL, NULL, &timeout);
+
+        if (activity < 0) {
+            perror("select");
+            break;
+        } else if (activity == 0) {
+            // Timeout occurred, no incoming connection
+            printf("Waiting for connections...\n");
+            continue;
+        }
+
+        // If we got here, there's an incoming connection ready to be accepted
+        if (FD_ISSET(sockfd, &read_fds)) {
+            client_fd = accept(sockfd, (struct sockaddr*)&client_addr, &client_len);
+            if (client_fd < 0) {
+                if (errno == EWOULDBLOCK || errno == EAGAIN) {
+                    // Non-blocking mode: no incoming connection yet
+                    continue;
+                } else {
+                    // Other error occurred
+                    perror("accept");
+                    break;
+                }
+            }
+
+            printf("Accepted a connection!\n");
+            close(client_fd);  // Handle client request and close
+        }
     }
+
+    // Cleanup
+    close(sockfd);
 }
 
 int mutex_start(int port) {
@@ -44,15 +100,12 @@ int mutex_start(int port) {
     // Set up the server address struct
     memset(&server_addr, 0, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = inet_addr(MUTEX_TCP_IP); // Bind to localhost
+    server_addr.sin_addr.s_addr = inet_addr("127.0.0.1"); // Bind to localhost
     server_addr.sin_port = htons(port);
-    
 
     // Try to bind the socket to the specified port
     if (bind(sockfd, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
-        char error_prefix[50];
-        sprintf(error_prefix, "bind %s:%d", MUTEX_TCP_IP, port);    
-        perror(error_prefix);
+        perror("bind");
         close(sockfd);
         sockfd = -1;
         return -1; // Port is already in use, likely another instance running

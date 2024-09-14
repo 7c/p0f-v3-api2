@@ -1015,7 +1015,6 @@ static void offline_event_loop(void) {
 
 }
 
-
 /* Main entry point */
 
 int main(int argc, char** argv) {
@@ -1023,7 +1022,8 @@ int main(int argc, char** argv) {
   s32 r;
 
   setlinebuf(stdout);
-  int mutex_port = 2222;
+  int mutex_port = -1;
+  
 
   SAYF("--- p0f " VERSION " by Michal Zalewski <lcamtuf@coredump.cx> ---\n\n");
 
@@ -1043,7 +1043,7 @@ int main(int argc, char** argv) {
         FATAL("Invalid port number provided for tcp-mutex.");
 
       if (mutex_start(mutex_port) == 0) {
-            printf("Successfully acquired the lock on port %d.", mutex_port);
+            printf("Successfully acquired the lock on port %d.\n", mutex_port);
         } else {
             printf("Failed to acquire lock. Another instance might be running.\n");
             return -1;
